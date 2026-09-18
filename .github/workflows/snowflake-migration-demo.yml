@@ -1,5 +1,6 @@
 name: snowflake-migration-demo
 
+# Controls when the action will run.
 on:
   push:
     branches:
@@ -7,6 +8,7 @@ on:
     paths:
       - 'deploy/**'
 
+  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 jobs:
@@ -14,19 +16,42 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
+      # ---------------------------------------------------------
+      # Step 1: Checkout the repository
+      # ---------------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v5
 
+
+      # ---------------------------------------------------------
+      # Step 2: Set up Python
+      # ---------------------------------------------------------
       - name: Use Python 3.12
         uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
+
+      # ---------------------------------------------------------
+      # Step 3: Install schemachange
+      # ---------------------------------------------------------
       - name: Install schemachange
         run: |
+          echo "Python version:"
+          python --version
+
+          echo "Installing schemachange..."
           python -m pip install --upgrade pip
           python -m pip install --upgrade schemachange
 
+          echo "Schemachange version:"
+          schemachange --version
+
+
+      # ---------------------------------------------------------
+      # Step 4: Verify Snowflake connection
+      # ---------------------------------------------------------
       - name: Verify Snowflake connection
         env:
           SNOWFLAKE_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
@@ -36,15 +61,14 @@ jobs:
           SNOWFLAKE_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
           SNOWFLAKE_DATABASE: ${{ secrets.SF_DATABASE }}
         run: |
-          echo "Python version:"
-          python --version
-
-          echo "Schemachange version:"
-          schemachange --version
-
           echo "Testing Snowflake connection..."
+
           schemachange verify -L DEBUG
 
+
+      # ---------------------------------------------------------
+      # Step 5: Deploy Snowflake changes
+      # ---------------------------------------------------------
       - name: Deploy Snowflake changes
         env:
           SNOWFLAKE_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
@@ -54,10 +78,12 @@ jobs:
           SNOWFLAKE_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
           SNOWFLAKE_DATABASE: ${{ secrets.SF_DATABASE }}
         run: |
-          echo "Running schemachange deployment..."
+          echo "Starting Snowflake deployment..."
 
           schemachange deploy \
             -f "$GITHUB_WORKSPACE/deploy" \
             -c "$SNOWFLAKE_DATABASE.SCHEMACHANGE.CHANGE_HISTORY" \
             --create-change-history-table \
             -L DEBUG
+
+          echo "Snowflake deployment completed."
