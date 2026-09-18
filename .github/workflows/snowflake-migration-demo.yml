@@ -36,15 +36,19 @@ jobs:
           SNOWFLAKE_DATABASE: ${{ secrets.SF_DATABASE }}
           SNOWFLAKE_PASSWORD: ${{ secrets.SF_PASSWORD }}
         run: |
-          echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
+          echo "Python version:"
           python --version
 
-          echo "Step 1: Installing schemachange"
+          echo "Installing schemachange..."
           python -m pip install --upgrade pip
           python -m pip install --upgrade schemachange
 
-          echo "Step 2: Running schemachange"
+          echo "Testing Snowflake connection..."
+          schemachange verify -L DEBUG
+
+          echo "Running schemachange..."
           schemachange deploy \
             -f "$GITHUB_WORKSPACE/deploy" \
-            -c "$SF_DATABASE.SCHEMACHANGE.CHANGE_HISTORY" \
-            --create-change-history-table
+            -c "$SNOWFLAKE_DATABASE.SCHEMACHANGE.CHANGE_HISTORY" \
+            --create-change-history-table \
+            -L DEBUG
