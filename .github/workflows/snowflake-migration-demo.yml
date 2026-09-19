@@ -1,6 +1,12 @@
 name: snowflake-migration-demo
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'deploy/**'
+
   workflow_dispatch:
 
 jobs:
@@ -9,26 +15,34 @@ jobs:
 
     steps:
 
+      # 1. Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v5
 
+      # 2. Setup Python
       - name: Use Python 3.12
         uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
+      # 3. Install schemachange
       - name: Install schemachange
         run: |
+          echo "========================================"
           echo "Python version:"
           python --version
+          echo "========================================"
 
-          echo "Installing schemachange..."
+          echo "Installing schemachange 4.3.3..."
           python -m pip install --upgrade pip
-          python -m pip install --upgrade schemachange
+          python -m pip install schemachange==4.3.3
 
-          echo "Schemachange version:"
-          schemachange --version
+          echo "========================================"
+          echo "Installed schemachange:"
+          python -m pip show schemachange
+          echo "========================================"
 
+      # 4. Verify Snowflake connection
       - name: Verify Snowflake connection
         env:
           SNOWFLAKE_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
@@ -37,6 +51,7 @@ jobs:
           SNOWFLAKE_ROLE: ${{ secrets.SF_ROLE }}
           SNOWFLAKE_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
           SNOWFLAKE_DATABASE: ${{ secrets.SF_DATABASE }}
+
         run: |
           echo "========================================"
           echo "Testing Snowflake connection"
@@ -46,4 +61,29 @@ jobs:
 
           echo "========================================"
           echo "Snowflake connection test completed"
+          echo "========================================"
+
+      # 5. Deploy Snowflake changes
+      - name: Deploy Snowflake changes
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
+          SNOWFLAKE_USER: ${{ secrets.SF_USERNAME }}
+          SNOWFLAKE_PASSWORD: ${{ secrets.SF_PASSWORD }}
+          SNOWFLAKE_ROLE: ${{ secrets.SF_ROLE }}
+          SNOWFLAKE_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
+          SNOWFLAKE_DATABASE: ${{ secrets.SF_DATABASE }}
+
+        run: |
+          echo "========================================"
+          echo "Starting Snowflake deployment"
+          echo "========================================"
+
+          schemachange deploy \
+            -f "$GITHUB_WORKSPACE/deploy" \
+            -c "$SNOWFLAKE_DATABASE.SCHEMACHANGE.CHANGE_HISTORY" \
+            --create-change-history-table \
+            -L DEBUG
+
+          echo "========================================"
+          echo "Snowflake deployment completed"
           echo "========================================"
