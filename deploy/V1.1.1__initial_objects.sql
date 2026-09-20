@@ -42,6 +42,17 @@ INSERT INTO hrdata.employees VALUES
 (109, 'Mohan', 'Chandra', 'MOCHANDRA', '613.234.4169',
  TO_DATE('16-AUG-1994', 'dd-MON-yyyy'), 'GL_ACCOUNT', 9000, NULL, 108, 100);
 
+-- Create departments table
+
+CREATE TABLE IF NOT EXISTS hrdata.departments
+(
+    department_id NUMBER(4),
+    department_name VARCHAR(30),
+    manager_id NUMBER(6),
+    location_id NUMBER(4),
+    PRIMARY KEY (department_id)
+);
+
 -- Insert data into departments
 
 INSERT INTO hrdata.departments VALUES
