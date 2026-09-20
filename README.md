@@ -1,1 +1,1 @@
-# Snowflake_CICDProcess
+# This repository is to store Snowflake objects
